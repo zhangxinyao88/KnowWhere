@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static String TAG = "KnowWhere";
 
     private float mMinDistance = 10000.0f;
+
     private long mMinTime = 5000;
     private Location mMarkedLocation;
     private LocationManager mLocationManager;
