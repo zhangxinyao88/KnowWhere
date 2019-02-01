@@ -17,15 +17,17 @@ public class MainActivity extends AppCompatActivity {
 
     private static final float MIN_ACCURACY = 5.0f;
     private static final float MIN_DISTANCE = 10.0f;
+    private static final float TARGET_DISTANCE = 1000;
     private static final long TWO_MIN = 1000 * 60 * 2;
     private static final long POLLING_FREQ = 1000 * 10;
+    private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
+    private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
 
     private final String TAG = "KnowWhere";
 
-    private Location mBestReading;
     private Location mMarkedLocation;
     private boolean mIsRequestingUpdates;
 
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         if (null == (mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE)))
             finish();
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+            requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONCREATE);
 
         final Button markButton = findViewById(R.id.markButton);
         markButton.setOnClickListener(new View.OnClickListener() {
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
                 if (mMarkedLocation == null) {
                     Toast.makeText(MainActivity.this, "No Marked Location", Toast.LENGTH_LONG).show();
                 } else {
+                    mIsRequestingUpdates = true;
                     mLocationListener = getLocationListener();
                     installLocationListeners();
                 }
@@ -69,9 +72,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void installLocationListeners() {
-        if (null == mBestReading || mBestReading.getAccuracy() > MIN_ACCURACY || mBestReading.getTime() < System.currentTimeMillis() - TWO_MIN) {
+        if (null == mMarkedLocation || mMarkedLocation.getAccuracy() > MIN_ACCURACY || mMarkedLocation.getTime() < System.currentTimeMillis() - TWO_MIN) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONRESUME);
             } else {
                 continueInstallLocationListeners();
             }
@@ -83,12 +86,10 @@ public class MainActivity extends AppCompatActivity {
             if (null != mLocationManager.getProvider(LocationManager.NETWORK_PROVIDER)) {
                 Log.i(TAG, "Network location updates requested");
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
-                mIsRequestingUpdates = true;
             }
             if (null != mLocationManager.getProvider(LocationManager.GPS_PROVIDER)) {
                 Log.i(TAG, "GPS location updates requested");
                 mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
-                mIsRequestingUpdates = true;
             }
         }
     }
@@ -111,11 +112,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        if (bestAccuracy > MIN_ACCURACY || System.currentTimeMillis() - bestAge > TWO_MIN) {
+        /*if (bestAccuracy > MIN_ACCURACY || System.currentTimeMillis() - bestAge > TWO_MIN) {
             return null;
         } else {
             return bestResult;
-        }
+        }*/
+        return bestResult;
     }
 
     private LocationListener getLocationListener() {
@@ -123,10 +125,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationChanged(Location location) {
                 Log.i(TAG, "New location received");
-                if (null == mBestReading || location.getAccuracy() <= mBestReading.getAccuracy()) {
-                    mBestReading = location;
+                if (null == mMarkedLocation || location.getAccuracy() <= mMarkedLocation.getAccuracy()) {
+                    mMarkedLocation = location;
                     updateDisplay(location);
-                    if (mBestReading.getAccuracy() < MIN_ACCURACY) {
+                    if (location.distanceTo(mMarkedLocation) < TARGET_DISTANCE) {
                         mLocationManager.removeUpdates(mLocationListener);
                         Log.i(TAG, "stop updating location");
                         mIsRequestingUpdates = false;
@@ -149,6 +151,34 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mIsRequestingUpdates) {
+            installLocationListeners();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mIsRequestingUpdates) {
+            mLocationManager.removeUpdates(mLocationListener);
+            Log.i(TAG, "Removing location updates in onPause()");
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (REQUEST_FINE_LOC_PERM_ONRESUME == requestCode) {
+                continueInstallLocationListeners();
+            }
+        } else {
+            Toast.makeText(this, "This app requires ACCESS_FINE_LOCATION permission", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updateDisplay(Location location) {
