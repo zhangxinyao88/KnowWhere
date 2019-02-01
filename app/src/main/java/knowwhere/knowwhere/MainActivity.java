@@ -23,6 +23,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
+    private Button mMarkButton;
+    private Button mTrackButton;
+    private Button mStopButton;
+
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
 
@@ -35,19 +39,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mMarkButton = findViewById(R.id.markButton);
+        mTrackButton = findViewById(R.id.trackButton);
+        mTrackButton.setVisibility(View.INVISIBLE);
+        mStopButton = findViewById(R.id.stopButton);
+        mStopButton.setVisibility(View.INVISIBLE);
 
         if (null == (mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE)))
             finish();
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONCREATE);
 
-        final Button markButton = findViewById(R.id.markButton);
-        markButton.setOnClickListener(new View.OnClickListener() {
+        mMarkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i(TAG, "Marking current location");
                 Location location = getBestLastKnownLocation();
                 if (location != null) {
+                    mMarkButton.setVisibility(View.INVISIBLE);
+                    mTrackButton.setVisibility(View.VISIBLE);
                     mMarkedLocation = location;
                     Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();
                 } else {
@@ -56,17 +66,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final Button trackButton = findViewById(R.id.trackButton);
-        trackButton.setOnClickListener(new View.OnClickListener() {
+        mTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mMarkedLocation == null) {
-                    Toast.makeText(MainActivity.this, "No Marked Location", Toast.LENGTH_LONG).show();
-                } else {
-                    mIsRequestingUpdates = true;
-                    mLocationListener = getLocationListener();
-                    installLocationListeners();
-                }
+                mTrackButton.setVisibility(View.INVISIBLE);
+                mStopButton.setVisibility(View.VISIBLE);
+                mIsRequestingUpdates = true;
+                mLocationListener = getLocationListener();
+                installLocationListeners();
+            }
+        });
+
+        mStopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mStopButton.setVisibility(View.INVISIBLE);
+                mMarkButton.setVisibility(View.VISIBLE);
+                mLocationManager.removeUpdates(mLocationListener);
+                Log.i(TAG, "stop updating location");
+                mIsRequestingUpdates = false;
+                mMarkedLocation = null;
             }
         });
     }
@@ -129,9 +148,7 @@ public class MainActivity extends AppCompatActivity {
                     mMarkedLocation = location;
                     updateDisplay(location);
                     if (location.distanceTo(mMarkedLocation) < TARGET_DISTANCE) {
-                        mLocationManager.removeUpdates(mLocationListener);
-                        Log.i(TAG, "stop updating location");
-                        mIsRequestingUpdates = false;
+                        Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
                     }
                 }
             }
