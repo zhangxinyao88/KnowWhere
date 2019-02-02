@@ -75,7 +75,19 @@ public class MainActivity extends AppCompatActivity {
                 mIsRequestingUpdates = true;
                 mLocationListener = getLocationListener();
                 installLocationListeners();
-                startActivity(new Intent(MainActivity.this, CompassActivity.class));
+
+                Log.i(TAG, "start compass");
+                Intent intent = new Intent(MainActivity.this, CompassActivity.class);
+                Location location = getBestLastKnownLocation();
+                if (mMarkedLocation == null || location == null) {
+                    Log.i(TAG, "no location");
+                    finish();
+                }
+                intent.putExtra("target", mMarkedLocation);
+                intent.putExtra("current", location);
+                Log.i(TAG, "put extras");
+                startActivity(intent);
+                Log.i(TAG, "here");
             }
         });
 
@@ -183,10 +195,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (mIsRequestingUpdates) {
+        /*if (mIsRequestingUpdates) {
             mLocationManager.removeUpdates(mLocationListener);
             Log.i(TAG, "Removing location updates in onPause()");
-        }
+        }*/
     }
 
     @Override
