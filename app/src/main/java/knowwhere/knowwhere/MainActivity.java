@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private static final float MIN_DISTANCE = 10.0f;
     private static final float TARGET_DISTANCE = 1000;
     private static final long TWO_MIN = 1000 * 60 * 2;
-    private static final long POLLING_FREQ = 1000 * 10;
+    private static final long POLLING_FREQ = Long.MAX_VALUE;
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
@@ -36,6 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private Location mMarkedLocation;
     private boolean mIsRequestingUpdates;
 
+    private CompassFragment mCompassFragment;
+    private android.app.FragmentManager mFragmentManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +49,10 @@ public class MainActivity extends AppCompatActivity {
         mTrackButton.setVisibility(View.INVISIBLE);
         mStopButton = findViewById(R.id.stopButton);
         mStopButton.setVisibility(View.INVISIBLE);
+
+        // Get a reference to the Fragment
+        mFragmentManager = getFragmentManager();
+        mCompassFragment = (CompassFragment) mFragmentManager.findFragmentById(R.id.compass);
 
         if (null == (mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE)))
             finish();
