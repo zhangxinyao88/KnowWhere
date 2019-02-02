@@ -2,6 +2,7 @@ package knowwhere.knowwhere;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 mIsRequestingUpdates = true;
                 mLocationListener = getLocationListener();
                 installLocationListeners();
+                startActivity(new Intent(MainActivity.this, CompassActivity.class));
             }
         });
 
