@@ -2,7 +2,6 @@ package knowwhere.knowwhere;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -45,9 +44,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Location mCurrentLocation;
     private boolean mIsRequestingUpdates;
 
-    //private CompassFragment mCompassFragment;
-    //private android.app.FragmentManager mFragmentManager;
-
     private RelativeLayout mFrame;
     private CompassArrowView mCompassArrow;
     private SensorManager mSensorManager;
@@ -66,10 +62,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTrackButton.setVisibility(View.INVISIBLE);
         mStopButton = findViewById(R.id.stopButton);
         mStopButton.setVisibility(View.INVISIBLE);
-
-        // Get a reference to the Fragment
-        //mFragmentManager = getFragmentManager();
-        //mCompassFragment = (CompassFragment) mFragmentManager.findFragmentById(R.id.compass);
 
         if (null == (mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE)))
             finish();
@@ -111,19 +103,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mIsRequestingUpdates = true;
                 mLocationListener = getLocationListener();
                 installLocationListeners();
-
-                /*Log.i(TAG, "start compass");
-                Intent intent = new Intent(MainActivity.this, CompassActivity.class);
-                Location location = getBestLastKnownLocation();
-                if (mMarkedLocation == null || location == null) {
-                    Log.i(TAG, "no location");
-                    finish();
-                }
-                intent.putExtra("target", mMarkedLocation);
-                intent.putExtra("current", location);
-                Log.i(TAG, "put extras");
-                startActivity(intent);
-                Log.i(TAG, "here");*/
             }
         });
 
@@ -245,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        if (mIsRequestingUpdates) {
         //if (mCurrentLocation != null && mMarkedLocation != null) {
             final float alpha = 0.97f;
 
@@ -278,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     mGravity = mGeomagnetic = null;
                 }
             }
-        //}
+        }
     }
 
     protected double bearing(Location l1, Location l2) {
