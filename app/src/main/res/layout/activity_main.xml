@@ -24,10 +24,22 @@
         android:layout_height="wrap_content"
         android:text="Stop Tracking" />
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/markButton"
+
+        android:text="TextView"
+        android:textAlignment="center"
+        android:textSize="30sp" />
+
     <RelativeLayout
         android:id="@+id/frame"
         android:layout_width="match_parent"
         android:layout_below="@id/trackButton"
-        android:layout_height="match_parent"></RelativeLayout>
+        android:layout_height="match_parent">
+
+    </RelativeLayout>
 
 </RelativeLayout>

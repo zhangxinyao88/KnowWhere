@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -181,6 +182,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (null == mCurrentLocation || location.getAccuracy() <= mCurrentLocation.getAccuracy()) {
                     mCurrentLocation = location;
 
+                    TextView tv = (TextView) findViewById(R.id.textView);
+                    tv.setText((int)mCurrentLocation.distanceTo(mMarkedLocation) + "m");
                     //updateDisplay(location);
                     //mCompassArrow.invalidate();
 
