@@ -29,15 +29,29 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/markButton"
+        android:textAlignment="center"
+        android:textSize="30sp" />
 
-        android:text="TextView"
+    <TextView
+        android:id="@+id/lat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView"
+        android:textAlignment="center"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/lng"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lat"
         android:textAlignment="center"
         android:textSize="30sp" />
 
     <RelativeLayout
         android:id="@+id/frame"
         android:layout_width="match_parent"
-        android:layout_below="@id/trackButton"
+        android:layout_below="@id/lng"
         android:layout_height="match_parent">
 
     </RelativeLayout>

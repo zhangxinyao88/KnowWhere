@@ -25,10 +25,10 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private static final float MIN_ACCURACY = 5.0f;
-    private static final float MIN_DISTANCE = 10.0f;
-    private static final float TARGET_DISTANCE = 1000;
+    private static final float MIN_DISTANCE = 0.1f;
+    private static final float TARGET_DISTANCE = 1;
     private static final long TWO_MIN = 1000 * 60 * 2;
-    private static final long POLLING_FREQ = 1000;
+    private static final long POLLING_FREQ = 100;
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float[] mGravity = null;
     private float[] mGeomagnetic = null;
     private double mRotationInDegrees;
+
+    private int cnt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,12 +123,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mMarkedLocation = null;
                 mRotationInDegrees = 0;
                 mCompassArrow.invalidate();
+
+                cnt = 0;
             }
         });
     }
 
     private void installLocationListeners() {
-        if (null == mMarkedLocation || mMarkedLocation.getAccuracy() > MIN_ACCURACY || mMarkedLocation.getTime() < System.currentTimeMillis() - TWO_MIN) {
+        if (null == mCurrentLocation || mCurrentLocation.getAccuracy() > MIN_ACCURACY || mCurrentLocation.getTime() < System.currentTimeMillis() - TWO_MIN) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONRESUME);
             } else {
@@ -179,18 +183,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onLocationChanged(Location location) {
                 Log.i(TAG, "New location received");
-                if (null == mCurrentLocation || location.getAccuracy() <= mCurrentLocation.getAccuracy()) {
+
+                cnt++;
+
+                //if (null == mCurrentLocation || location.getAccuracy() <= mCurrentLocation.getAccuracy()) {
                     mCurrentLocation = location;
-
+                    float dist = location.distanceTo(mMarkedLocation);
                     TextView tv = (TextView) findViewById(R.id.textView);
-                    tv.setText((int)mCurrentLocation.distanceTo(mMarkedLocation) + "m");
-                    //updateDisplay(location);
-                    //mCompassArrow.invalidate();
-
-                    if (location.distanceTo(mMarkedLocation) < TARGET_DISTANCE) {
+                    tv.setText(((int) dist) + "m, " + cnt);
+                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "");
+                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "");
+                    if (dist < TARGET_DISTANCE) {
                         Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
                     }
-                }
+                //}
             }
 
             @Override
