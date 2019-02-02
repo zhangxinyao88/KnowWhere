@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final float MIN_DISTANCE = 10.0f;
     private static final float TARGET_DISTANCE = 1000;
     private static final long TWO_MIN = 1000 * 60 * 2;
-    private static final long POLLING_FREQ = Long.MAX_VALUE;
+    private static final long POLLING_FREQ = 1000;
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
@@ -79,6 +79,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (null == accelerometer || null == magnetometer)
             finish();
 
+        mGravity = new float[3];
+        mGeomagnetic = new float[3];
+
         mMarkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -115,6 +118,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Log.i(TAG, "stop updating location");
                 mIsRequestingUpdates = false;
                 mMarkedLocation = null;
+                mRotationInDegrees = 0;
+                mCompassArrow.invalidate();
             }
         });
     }
@@ -173,11 +178,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onLocationChanged(Location location) {
                 Log.i(TAG, "New location received");
-                if (null == mMarkedLocation || location.getAccuracy() <= mMarkedLocation.getAccuracy()) {
+                if (null == mCurrentLocation || location.getAccuracy() <= mCurrentLocation.getAccuracy()) {
                     mCurrentLocation = location;
 
                     //updateDisplay(location);
-                    mCompassArrow.invalidate();
+                    //mCompassArrow.invalidate();
 
                     if (location.distanceTo(mMarkedLocation) < TARGET_DISTANCE) {
                         Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
@@ -224,23 +229,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (mIsRequestingUpdates) {
+        if (mIsRequestingUpdates && mCurrentLocation != null && mMarkedLocation != null) {
         //if (mCurrentLocation != null && mMarkedLocation != null) {
             final float alpha = 0.97f;
 
             Log.i(TAG, "onSensorChanged");
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                //mGravity[0] = alpha * mGravity[0] + (1 - alpha) * event.values[0];
-                //mGravity[1] = alpha * mGravity[1] + (1 - alpha) * event.values[1];
-                //mGravity[2] = alpha * mGravity[2] + (1 - alpha) * event.values[2];
-                mGravity = new float[3];
-                System.arraycopy(event.values, 0, mGravity, 0, 3);
+                mGravity[0] = alpha * mGravity[0] + (1 - alpha) * event.values[0];
+                mGravity[1] = alpha * mGravity[1] + (1 - alpha) * event.values[1];
+                mGravity[2] = alpha * mGravity[2] + (1 - alpha) * event.values[2];
+                //mGravity = new float[3];
+                //System.arraycopy(event.values, 0, mGravity, 0, 3);
             } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                //mGeomagnetic[0] = alpha * mGeomagnetic[0] + (1 - alpha) * event.values[0];
-                //mGeomagnetic[1] = alpha * mGeomagnetic[1] + (1 - alpha) * event.values[1];
-                //mGeomagnetic[2] = alpha * mGeomagnetic[2] + (1 - alpha) * event.values[2];
-                mGeomagnetic = new float[3];
-                System.arraycopy(event.values, 0, mGeomagnetic, 0, 3);
+                Log.i(TAG, mGeomagnetic[0] + ", " + mGeomagnetic[1] + ", " + mGeomagnetic[2]);
+                mGeomagnetic[0] = alpha * mGeomagnetic[0] + (1 - alpha) * event.values[0];
+                mGeomagnetic[1] = alpha * mGeomagnetic[1] + (1 - alpha) * event.values[1];
+                mGeomagnetic[2] = alpha * mGeomagnetic[2] + (1 - alpha) * event.values[2];
+                //mGeomagnetic = new float[3];
+                //System.arraycopy(event.values, 0, mGeomagnetic, 0, 3);
             }
             if (mGravity != null && mGeomagnetic != null) {
                 float rotationMatrix[] = new float[9];
@@ -250,12 +256,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     mRotationInDegrees = Math.toDegrees(orientationMatrix[0]);
 
                     mRotationInDegrees = (mRotationInDegrees + 360) % 360;
-                    //mRotationInDegrees -= bearing(mCurrentLocation, mMarkedLocation);
+                    mRotationInDegrees -= bearing(mCurrentLocation, mMarkedLocation);
 
                     Log.i(TAG, "updating canvas");
                     mCompassArrow.invalidate();
                     Log.i(TAG, "canvas updated");
-                    mGravity = mGeomagnetic = null;
+                    //mGravity = mGeomagnetic = null;
                 }
             }
         }
