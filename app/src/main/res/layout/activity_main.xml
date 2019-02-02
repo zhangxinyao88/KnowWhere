@@ -24,14 +24,10 @@
         android:layout_height="wrap_content"
         android:text="Stop Tracking" />
 
-    <ImageView
-        android:id="@+id/compass"
-        android:layout_width="340dp"
-        android:layout_height="340dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="18dp"
-        android:layout_marginTop="66dp"
-        app:srcCompat="@drawable/arrow" />
+    <RelativeLayout
+        android:id="@+id/frame"
+        android:layout_width="match_parent"
+        android:layout_below="@id/trackButton"
+        android:layout_height="match_parent"></RelativeLayout>
 
 </RelativeLayout>
