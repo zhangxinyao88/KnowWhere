@@ -22,17 +22,19 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import mehdi.sakout.fancybuttons.FancyButton;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final float MIN_ACCURACY = 5.0f;
-    private static final float MIN_DISTANCE = 0.1f;
-    private static final float TARGET_DISTANCE = 1;
+    private static final float MIN_ACCURACY = 10.0f;
+    private static final float MIN_DISTANCE = 0.01f;
+    private static final float TARGET_DISTANCE = 5;
     private static final long TWO_MIN = 1000 * 60 * 2;
     private static final long POLLING_FREQ = 100;
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
-    private Button mMarkButton;
+    private FancyButton mMarkButton;
     private Button mTrackButton;
     private Button mStopButton;
 
@@ -55,6 +57,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double mRotationInDegrees;
 
     private int cnt = 0;
+
+    GPSTracker gps = new GPSTracker(MainActivity.this );
+    float latitude = (float)gps.getLatitude();
+    float longitude = (float)gps.getLongitude();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,10 +147,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void continueInstallLocationListeners() {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            if (null != mLocationManager.getProvider(LocationManager.NETWORK_PROVIDER)) {
+            /*if (null != mLocationManager.getProvider(LocationManager.NETWORK_PROVIDER)) {
                 Log.i(TAG, "Network location updates requested");
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
-            }
+            }*/
             if (null != mLocationManager.getProvider(LocationManager.GPS_PROVIDER)) {
                 Log.i(TAG, "GPS location updates requested");
                 mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
@@ -156,7 +162,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Location bestResult = null;
         float bestAccuracy = Float.MAX_VALUE;
         long bestAge = Long.MIN_VALUE;
-        for (String provider : mLocationManager.getAllProviders()) {
+        //for (String provider : mLocationManager.getAllProviders()) {
+        String provider = LocationManager.GPS_PROVIDER;
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 Location location = mLocationManager.getLastKnownLocation(provider);
                 if (location != null) {
@@ -169,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }
                 }
             }
-        }
+        //}
         /*if (bestAccuracy > MIN_ACCURACY || System.currentTimeMillis() - bestAge > TWO_MIN) {
             return null;
         } else {
@@ -191,8 +198,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     float dist = location.distanceTo(mMarkedLocation);
                     TextView tv = (TextView) findViewById(R.id.textView);
                     tv.setText(((int) dist) + "m, " + cnt);
-                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "");
-                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "");
+                //((TextView) findViewById(R.id.lat)).setText(latitude + "m");
+                //((TextView) findViewById(R.id.lng)).setText(longitude + "m");
+                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "m");
+                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "m");
                     if (dist < TARGET_DISTANCE) {
                         Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
                     }
