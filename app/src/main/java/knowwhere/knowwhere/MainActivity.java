@@ -21,7 +21,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -69,12 +68,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float[] mGeomagnetic = null;
     private double mRotationInDegrees;
 
-    private int cnt = 0;
-
-    GPSTracker gps = new GPSTracker(MainActivity.this );
-    float latitude = (float)gps.getLatitude();
-    float longitude = (float)gps.getLongitude();
-
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
@@ -110,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mGravity = new float[3];
         mGeomagnetic = new float[3];
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+        //mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
 
         mLocationCallback = new LocationCallback() {
             @Override
@@ -128,8 +121,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (mIsRequestingUpdates && bestResult != null) {
                     mCurrentLocation = bestResult;
                     Log.i(TAG, "New location received");
-
-                    cnt++;
 
                     float dist = mCurrentLocation.distanceTo(mMarkedLocation);
                     TextView tv = (TextView) findViewById(R.id.textView);
@@ -149,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onClick(View v) {
                 Log.i(TAG, "Marking current location");
-                /*mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+                mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
                 mFusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
@@ -162,13 +153,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             Toast.makeText(MainActivity.this, "Failed to Mark Current Location", Toast.LENGTH_LONG).show();
                         }
                     }
-                });*/
-                mMarkedLocation = new Location("");
+                });
+                /*mMarkedLocation = new Location("");
                 mMarkedLocation.setLatitude(38.9066473);
                 mMarkedLocation.setLongitude(-77.0726751);
                 mMarkButton.setVisibility(View.INVISIBLE);
                 mTrackButton.setVisibility(View.VISIBLE);
-                Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();*/
             }
         });
 
@@ -193,8 +184,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mMarkedLocation = null;
                 mRotationInDegrees = 0;
                 mCompassArrow.invalidate();
-
-                cnt = 0;
             }
         });
     }
@@ -240,6 +229,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             Log.i(TAG, "onSensorChanged");
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                Log.i(TAG, mGravity[0] + "," + mGravity[1] + "," + mGravity[2]);
                 mGravity[0] = alpha * mGravity[0] + (1 - alpha) * event.values[0];
                 mGravity[1] = alpha * mGravity[1] + (1 - alpha) * event.values[1];
                 mGravity[2] = alpha * mGravity[2] + (1 - alpha) * event.values[2];
