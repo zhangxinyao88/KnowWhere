@@ -13,6 +13,10 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Looper;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,21 +26,30 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+
 import mehdi.sakout.fancybuttons.FancyButton;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final float MIN_ACCURACY = 10.0f;
     private static final float MIN_DISTANCE = 0.01f;
-    private static final float TARGET_DISTANCE = 5;
+    private static final float TARGET_DISTANCE = 15;
     private static final long TWO_MIN = 1000 * 60 * 2;
     private static final long POLLING_FREQ = 100;
     private static final int REQUEST_FINE_LOC_PERM_ONCREATE = 200;
     private static final int REQUEST_FINE_LOC_PERM_ONRESUME = 201;
 
     private FancyButton mMarkButton;
-    private Button mTrackButton;
-    private Button mStopButton;
+    private FancyButton mTrackButton;
+    private FancyButton mStopButton;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
@@ -62,6 +75,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     float latitude = (float)gps.getLatitude();
     float longitude = (float)gps.getLongitude();
 
+    private FusedLocationProviderClient mFusedLocationClient;
+    private GoogleApiClient mGoogleApiClient;
+    private LocationRequest mLocationRequest;
+    private LocationCallback mLocationCallback;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,8 +92,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         if (null == (mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE)))
             finish();
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONCREATE);
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_FINE_LOC_PERM_ONCREATE);
 
         mFrame = findViewById(R.id.frame);
         mCompassArrow = new CompassArrowView(getApplicationContext());
@@ -91,19 +110,65 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mGravity = new float[3];
         mGeomagnetic = new float[3];
 
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                Location bestResult = null;
+                float bestAccuracy = Float.MAX_VALUE;
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        if (location.getAccuracy() < bestAccuracy) {
+                            bestResult = location;
+                            bestAccuracy = location.getAccuracy();
+                        }
+                    }
+                }
+                if (mIsRequestingUpdates && bestResult != null) {
+                    mCurrentLocation = bestResult;
+                    Log.i(TAG, "New location received");
+
+                    cnt++;
+
+                    float dist = mCurrentLocation.distanceTo(mMarkedLocation);
+                    TextView tv = (TextView) findViewById(R.id.textView);
+                    tv.setText(((int) dist) + "m");
+                    //((TextView) findViewById(R.id.lat)).setText(latitude + "m");
+                    //((TextView) findViewById(R.id.lng)).setText(longitude + "m");
+                    //((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "");
+                    //((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "");
+                    if (dist < TARGET_DISTANCE) {
+                        Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        };
+
         mMarkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i(TAG, "Marking current location");
-                Location location = getBestLastKnownLocation();
-                if (location != null) {
-                    mMarkButton.setVisibility(View.INVISIBLE);
-                    mTrackButton.setVisibility(View.VISIBLE);
-                    mMarkedLocation = location;
-                    Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to Mark Current Location", Toast.LENGTH_LONG).show();
-                }
+                /*mFusedLocationClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+                mFusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            mMarkButton.setVisibility(View.INVISIBLE);
+                            mTrackButton.setVisibility(View.VISIBLE);
+                            mMarkedLocation = location;
+                            Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Failed to Mark Current Location", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });*/
+                mMarkedLocation = new Location("");
+                mMarkedLocation.setLatitude(38.9066473);
+                mMarkedLocation.setLongitude(-77.0726751);
+                mMarkButton.setVisibility(View.INVISIBLE);
+                mTrackButton.setVisibility(View.VISIBLE);
+                Toast.makeText(MainActivity.this, "Current Location Marked", Toast.LENGTH_LONG).show();
             }
         });
 
@@ -113,8 +178,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mTrackButton.setVisibility(View.INVISIBLE);
                 mStopButton.setVisibility(View.VISIBLE);
                 mIsRequestingUpdates = true;
-                mLocationListener = getLocationListener();
-                installLocationListeners();
+                requestLocationUpdates();
             }
         });
 
@@ -123,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View v) {
                 mStopButton.setVisibility(View.INVISIBLE);
                 mMarkButton.setVisibility(View.VISIBLE);
-                mLocationManager.removeUpdates(mLocationListener);
+                mFusedLocationClient.removeLocationUpdates(mLocationCallback);
                 Log.i(TAG, "stop updating location");
                 mIsRequestingUpdates = false;
                 mMarkedLocation = null;
@@ -135,111 +199,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
     }
 
-    private void installLocationListeners() {
-        if (null == mCurrentLocation || mCurrentLocation.getAccuracy() > MIN_ACCURACY || mCurrentLocation.getTime() < System.currentTimeMillis() - TWO_MIN) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOC_PERM_ONRESUME);
-            } else {
-                continueInstallLocationListeners();
-            }
-        }
-    }
-
-    private void continueInstallLocationListeners() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            /*if (null != mLocationManager.getProvider(LocationManager.NETWORK_PROVIDER)) {
-                Log.i(TAG, "Network location updates requested");
-                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
-            }*/
-            if (null != mLocationManager.getProvider(LocationManager.GPS_PROVIDER)) {
-                Log.i(TAG, "GPS location updates requested");
-                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, POLLING_FREQ, MIN_DISTANCE, mLocationListener);
-            }
-        }
-    }
-
-    private Location getBestLastKnownLocation() {
-        Location bestResult = null;
-        float bestAccuracy = Float.MAX_VALUE;
-        long bestAge = Long.MIN_VALUE;
-        //for (String provider : mLocationManager.getAllProviders()) {
-        String provider = LocationManager.GPS_PROVIDER;
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                Location location = mLocationManager.getLastKnownLocation(provider);
-                if (location != null) {
-                    float accuracy = location.getAccuracy();
-                    long time = location.getTime();
-                    if (accuracy < bestAccuracy) {
-                        bestResult = location;
-                        bestAccuracy = accuracy;
-                        bestAge = time;
-                    }
-                }
-            }
-        //}
-        /*if (bestAccuracy > MIN_ACCURACY || System.currentTimeMillis() - bestAge > TWO_MIN) {
-            return null;
-        } else {
-            return bestResult;
-        }*/
-        return bestResult;
-    }
-
-    private LocationListener getLocationListener() {
-        return new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                Log.i(TAG, "New location received");
-
-                cnt++;
-
-                //if (null == mCurrentLocation || location.getAccuracy() <= mCurrentLocation.getAccuracy()) {
-                    mCurrentLocation = location;
-                    float dist = location.distanceTo(mMarkedLocation);
-                    TextView tv = (TextView) findViewById(R.id.textView);
-                    tv.setText(((int) dist) + "m, " + cnt);
-                //((TextView) findViewById(R.id.lat)).setText(latitude + "m");
-                //((TextView) findViewById(R.id.lng)).setText(longitude + "m");
-                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "m");
-                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "m");
-                    if (dist < TARGET_DISTANCE) {
-                        Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
-                    }
-                //}
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
         if (mIsRequestingUpdates) {
-            installLocationListeners();
+            if (mGoogleApiClient != null && mFusedLocationClient != null) {
+                requestLocationUpdates();
+            } else {
+                buildGoogleApiClient();
+            }
         }
         mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        if (mIsRequestingUpdates) {
-            mLocationManager.removeUpdates(mLocationListener);
+        if (mIsRequestingUpdates && mFusedLocationClient != null) {
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             Log.i(TAG, "Removing location updates in onPause()");
         }
         mSensorManager.unregisterListener(this);
@@ -259,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //mGravity = new float[3];
                 //System.arraycopy(event.values, 0, mGravity, 0, 3);
             } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                Log.i(TAG, mGeomagnetic[0] + ", " + mGeomagnetic[1] + ", " + mGeomagnetic[2]);
+                //Log.i(TAG, mGeomagnetic[0] + ", " + mGeomagnetic[1] + ", " + mGeomagnetic[2]);
                 mGeomagnetic[0] = alpha * mGeomagnetic[0] + (1 - alpha) * event.values[0];
                 mGeomagnetic[1] = alpha * mGeomagnetic[1] + (1 - alpha) * event.values[1];
                 mGeomagnetic[2] = alpha * mGeomagnetic[2] + (1 - alpha) * event.values[2];
@@ -303,17 +290,38 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (REQUEST_FINE_LOC_PERM_ONRESUME == requestCode) {
-                continueInstallLocationListeners();
-            }
-        } else {
-            Toast.makeText(this, "This app requires ACCESS_FINE_LOCATION permission", Toast.LENGTH_LONG).show();
+        if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "This app requires ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION permissions", Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
-    private void updateDisplay(Location location) {
-        //TODO: implement here
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        requestLocationUpdates();
+    }
+
+    public void requestLocationUpdates() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(100);
+        mLocationRequest.setFastestInterval(100);
+        mLocationRequest.setMaxWaitTime(100);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
     }
 
     public class CompassArrowView extends View {
