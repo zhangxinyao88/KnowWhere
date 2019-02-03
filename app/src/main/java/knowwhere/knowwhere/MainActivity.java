@@ -197,11 +197,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     mCurrentLocation = location;
                     float dist = location.distanceTo(mMarkedLocation);
                     TextView tv = (TextView) findViewById(R.id.textView);
-                    tv.setText(((int) dist) + "m, " + cnt);
+                    tv.setText( dist + "m, " + cnt);
                 //((TextView) findViewById(R.id.lat)).setText(latitude + "m");
                 //((TextView) findViewById(R.id.lng)).setText(longitude + "m");
-                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "m");
-                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "m");
+                ((TextView) findViewById(R.id.lat)).setText(mCurrentLocation.getLatitude() + "°");
+                ((TextView) findViewById(R.id.lng)).setText(mCurrentLocation.getLongitude() + "°");
                     if (dist < TARGET_DISTANCE) {
                         Toast.makeText(MainActivity.this, "You are almost there!", Toast.LENGTH_LONG).show();
                     }
@@ -253,6 +253,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             Log.i(TAG, "onSensorChanged");
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                Log.i(TAG, mGravity[0] + "," + mGravity[1] + "," + mGravity[2]);
                 mGravity[0] = alpha * mGravity[0] + (1 - alpha) * event.values[0];
                 mGravity[1] = alpha * mGravity[1] + (1 - alpha) * event.values[1];
                 mGravity[2] = alpha * mGravity[2] + (1 - alpha) * event.values[2];
