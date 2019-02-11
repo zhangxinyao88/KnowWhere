@@ -13,12 +13,20 @@ We utilized Fused Location Provider API, location, GPS and network service under
 The demo video can be found at:
 https://youtu.be/hCHrjEp_t_g
 
-Example UI:
+Example UI are as following:
+
+Mark current location:
+
+
 ![alt text](https://i.ibb.co/7ynmtFM/1.jpg)
-![alt text](https://ibb.co/VLTfGFf)
-![alt text](https://ibb.co/t2VqLRW)
+
+Start Navigation:
 
 
-[url=https://ibb.co/Th43M5j][img][/img][/url]
-[url=https://ibb.co/VLTfGFf][img]https://i.ibb.co/FhzR1QR/2.jpg[/img][/url]
-[url=https://ibb.co/t2VqLRW][img]https://i.ibb.co/fNjkDJP/3.jpg[/img][/url]
+![alt text](https://i.ibb.co/FhzR1QR/2.jpg)
+
+When user reach the spot:
+
+
+![alt text](https://i.ibb.co/fNjkDJP/3.jpg[/img)
+
