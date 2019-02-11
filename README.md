@@ -14,7 +14,7 @@ The demo video can be found at:
 https://youtu.be/hCHrjEp_t_g
 
 Example UI:
-![alt text](https://ibb.co/Th43M5j)
+![alt text](https://ibb.co/Th43M5j/1.jpg)
 ![alt text](https://ibb.co/VLTfGFf)
 ![alt text](https://ibb.co/t2VqLRW)
 
