@@ -1,5 +1,5 @@
-# KnowWhere
-KnowWhere – Navigation application with Google API integration
+# Knowhere
+Knowhere – Navigation application with Google API integration
 
 Inspiration:
 I always park my car in a huge parking lot where there're hundreds of hundreds of cars near me and I get confused where I park my car.
